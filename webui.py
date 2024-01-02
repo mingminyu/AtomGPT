@@ -9,12 +9,43 @@ app.add_static_files('/static', 'static')
 
 @ui.page('/')
 def atom_chat():
+    toggle_icon = to_ref("format_indent_decrease")
+
     with (
         ui.header(elevated=True, add_scroll_padding=True)
         .classes("self-center items-center justify-between")
         .style("background: white; height: 55px")
     ):
-        webui.button(icon="menu_open", flat=True, dense=True, on_click=lambda: left_drawer.toggle())
+        def _change_toggle_icon():
+            """改变侧滑按钮的图标"""
+            if toggle_icon.value == "format_indent_decrease":
+                toggle_icon.value = "format_indent_increase"
+            else:
+                toggle_icon.value = "format_indent_decrease"
+
+            left_drawer.toggle()
+
+        webui.button(
+            icon=toggle_icon, color="primary", flat=True, dense=True,
+            on_click=_change_toggle_icon
+        )
+
+        with ui.row().classes("items-center justify-center self-end").style("background: white"):
+            with webui.button(
+                    icon='img:static/avatar/default.png',
+                    color='blue-2', size="10px",
+                    shape="round"
+            ):
+                webui.badge('3', color='red').props('dense floating')
+
+                with webui.menu().style('width: 150px') as user_menu:
+                    webui.button(
+                        "Settings", icon="settings", color=None, flat=True, align='left').classes('w-full')
+                    ui.separator()
+                    # logout_menu = webui.menu_item("Logout")
+                    webui.button(
+                        "Logout", icon="logout", color=None, flat=True, align='left').classes('w-full')
+
 
     with webui.drawer(
             side="left",
@@ -46,7 +77,7 @@ def atom_chat():
         else:
             send_disabled.value = False
 
-    with ui.column().classes('items-center self-center').style('padding-top: 120px; gap: 1px') as home_greet:
+    with ui.column().classes('items-center self-center').style('padding-top: 120px; gap: 0') as home_greet:
         ui.avatar(
             icon="img:static/images/site_logo.svg", size="100px", color="white"
             ).style('height: 80px')
@@ -56,7 +87,7 @@ def atom_chat():
     with ui.footer().classes('bg-white'), ui.column().classes('w-full max-w-4xl mx-auto my-6'):
         with ui.row().classes('w-full items-center'):
             chat_box = webui.input(
-                placeholder="Message CatGPT", outlined=True, input_class='mx-3',
+                placeholder="Message AtomGPT", outlined=True, input_class='mx-3',
                 on_change=lambda e: update_send_btn_disabled(e)
             ).classes('flex-grow')
 
@@ -66,7 +97,7 @@ def atom_chat():
                 ).style('border-radius: 0.5rem')
 
         ui.markdown(
-            'CatGPT can make mistakes. Consider checking important information.'
+            'AtomGPT can make mistakes. Consider checking important information.'
         ).classes('text-xs self-center mr-8 m-[-1em] text-grey')
 
 
