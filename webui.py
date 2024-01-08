@@ -2,8 +2,6 @@ from nicegui import ui, app
 # from nicegui.events import ValueChangeEventArguments
 # from atomui import to_ref, effect
 from atomui import webui
-
-# from atomui.mock.markdown import markdown_content_example
 from atomui.components import Router
 from atomui.layout.header import chat_header
 from atomui.layout.sidebar import chat_sidebar, chat_sidebar_card
@@ -25,7 +23,7 @@ app.add_static_files('/static', 'static')
 
 
 def add_new_card(router: Router, left_sidebar: DrawerBindableUi):
-    new_card = chat_sidebar_card(chat_card=ChatCard(**chat_conversation_example[0]), router=router)
+    new_card = chat_sidebar_card(chat_card=ChatCard(**chat_conversations_example[0]), router=router)
     new_card.element.move(left_sidebar.element)
 
 
@@ -60,8 +58,8 @@ def main():
         """
     )
 
-    router.add_parameters_url('/c/c1', var_index)
-    router.add_parameters_url('/c/c2', var_index)
+    # router.add_parameters_url('/c/c1', var_index)
+    # router.add_parameters_url('/c/c2', var_index)
     router.frame().classes('w-full')
 
 
