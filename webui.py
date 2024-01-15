@@ -1,4 +1,8 @@
-from nicegui import ui, app
+import asyncio
+from nicegui import ui, app, run
+# from nicegui.elements.chat_message import ChatMessage
+from tortoise import Tortoise
+
 # from nicegui.events import ValueChangeEventArguments
 # from atomui import to_ref, effect
 from atomui import webui
@@ -9,32 +13,48 @@ from atomui.layout.footer import chat_footer
 from atomui.elements.chatgpt import chat_greet
 
 from atomui.mock.chat_conversation import chat_conversations_example
-from atomui.models.chat import ChatCardModel
+from atomui.models.chat import ChatCardModel, ChatInfo
 from atomui.elements.drawer import DrawerBindableUi
 from atomui.utils.parser import MarkdownParser
 from atomui.layout.body import chat_messages_card
-from atomui.models.chat import ChatMessage
+from atomui.models.chat import ChatMessageModel
 from atomui.elements.chatgpt import ChatFooter, ChatSidebar, ChatHeader
+from orm.chat import ChatInfo
 
 md_parser = MarkdownParser()
 app.add_static_files('/static', 'static')
 
+# chat_cards = [ChatCardModel(**chat_conversation) for chat_conversation in chat_conversations_example]
 
 
-chat_cards = [ChatCardModel(**chat_conversation) for chat_conversation in chat_conversations_example]
+async def init_db() -> None:
+    await Tortoise.init(db_url='sqlite://db.sqlite3', modules={'models': ['orm.chat']})
+    await Tortoise.generate_schemas()
 
 
-# def add_new_card(router: Router, left_sidebar: DrawerBindableUi):
-#     new_card = chat_sidebar_card(chat_card=ChatCard(**chat_conversations_example[1]), router=router)
-#     # 将新卡片加入到 left_sidebar 的 default_slot 中，默认追加到 Today 标签下
-#     new_card.element.move(
-#         left_sidebar.element.default_slot.children[1], target_index=1
-#     )
+async def close_db() -> None:
+    await Tortoise.close_connections()
+
+
+app.on_startup(init_db)
+app.on_shutdown(close_db)
+
+
+
+# def get_chat_card(chat_id: str):
+#     for chat_card in chat_cards:
+#         if chat_card.cid == chat_id:
+#             return chat_card
+
+
+
+async def get_chat_infos(username: str):
+    return await ChatInfo.filter(username=username).order_by('ts')
 
 
 @ui.page("/")
 @ui.page("/{_:path}")
-def main():
+async def main():
     router = Router()
 
     @router.add('/')
@@ -66,9 +86,10 @@ def main():
         # chat_messages_card(ChatCard(**chat_conversations_example[1]).conversation)
 
     @router.add('/chat')
-    def chat_home(chat_id: str = None):
-        ui.label(chat_id)
-
+    async def chat_home(chat_id: str = None):
+        # chat_message = get_chat_card(chat_id)
+        # chat_messages_card(chat_message.conversation)
+        ...
 
     @router.add('/echarts_graph')
     def example_npm_graph():
@@ -78,7 +99,6 @@ def main():
             graph = json.loads(f.read())
 
         legend_cates = [cate['name'] for cate in graph['categories']]
-
 
         with webui.row().classes('w-full justify-center self-center items-self'):
             ui.echart({
@@ -120,11 +140,20 @@ def main():
             }).classes('w-full max-w-3xl h-[700px] flex justify-center self-center items-self')
 
 
+    app.storage.user.update({"username": "draven"})
+    username = app.storage.user.get("username")
+
+
+    chat_infos = await get_chat_infos(username)
+    # for chat_info in await get_chat_infos(username):
+    #     print(chat_info)
+
+
     # left_drawer = chat_sidebar(router)
-    chat_sidebar = ChatSidebar(router=router, chat_cards=chat_cards)
+    chat_sidebar = ChatSidebar(router=router, chat_infos=chat_infos)
     chat_header = ChatHeader(chat_sidebar)
     # chat_box, send_disabled = chat_footer()
-    ChatFooter(router=router, chat_sidebar=chat_sidebar)
+    # ChatFooter(router=router, chat_sidebar=chat_sidebar)
 
     router.frame().classes('w-full')
 
@@ -143,4 +172,4 @@ def main():
     )
 
 
-ui.run(language='zh-CN', port=8081, reload=True)
+ui.run(language='zh-CN', port=8081, reload=True, storage_secret="test")
